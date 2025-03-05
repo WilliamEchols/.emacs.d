@@ -1,8 +1,8 @@
-;; Delta Emacs                                        -*- lexical-binding: t -*-
+;; δ Emacs                                            -*- lexical-binding: t -*-
 
 ;; Modern, fully-featured emacs, with minimal dependencies
 
-(setq config-name "Delta Emacs")
+(setq config-name "GNU Emacs")
 (setq local-directory "~/Desktop/orgfiles")
 (setq banner-filepath "~/.emacs.d/banner.txt")
 
@@ -45,7 +45,7 @@
 
 ;; --- Typography stack -------------------------------------------------------
 (set-face-attribute 'default nil
-                    :height 140 :weight 'light :family "Andale Mono")
+                    :height 170 :weight 'light :family "Andale Mono")
 (set-face-attribute 'bold nil :weight 'regular)
 (set-face-attribute 'bold-italic nil :weight 'regular)
 (set-display-table-slot standard-display-table 'truncation (make-glyph-code ?…))
@@ -225,16 +225,13 @@ This function sets custom colors for headlines as well as other Org elements lik
 
 ;; --- Misc -------------------------------------------------------------------
 
-;; --- LLMs ---
-
-;; --- NOTE: erc  ---
-
 ;; --- tree-sitter ---
 
 (when (and (boundp 'treesit-language-source-alist)
            (fboundp 'treesit-install-language-grammar)))
 
 ;; --- spell checking ---
+
 (use-package flyspell
   :ensure nil
   :hook ((markdown-mode . flyspell-mode)
@@ -243,7 +240,7 @@ This function sets custom colors for headlines as well as other Org elements lik
 ;; --- latex ---
 
 (require 'ox-latex)
-(plist-put org-format-latex-options :scale 0.5)
+(plist-put org-format-latex-options :scale 1.4)
 
 (use-package org-fragtog
   :hook (org-mode . org-fragtog-mode))
@@ -290,6 +287,9 @@ This function sets custom colors for headlines as well as other Org elements lik
 
 (setq org-agenda-files (list (concat local-directory "/agenda")))
 (setq org-agenda-timegrid-use-ampm t)
+
+; change due to org-mode v9
+(setq org-agenda-prefer-last-repeat t)
 
 ;; org-super-agenda
 
@@ -345,6 +345,19 @@ This function sets custom colors for headlines as well as other Org elements lik
 
 ;; --- Functions --------------------------------------------------------------
 
+;; ERROR: apply: Removing old name: is a directory: /Users/user/Desktop/orgfiles/ltximg
+(defun de/clear-latex-preview-cache ()
+  "Clear all latex preview images in the current buffer."
+  (interactive)
+  (org-remove-latex-fragment-image-overlays)
+  (let ((dir (file-name-directory (buffer-file-name))))
+    (when dir
+      (let ((files (directory-files dir t "^ltximg.*\\|^.*\\.dvi\\|^.*\\.pdf\\|^.*\\.ps\\|^.*\\.png$")))
+        (dolist (file files)
+          (when (file-exists-p file)
+            (delete-file file)))))
+  (message "Cleared latex preview cache")))
+
 (defun de/bottom-terminal ()
   (interactive)
   (split-window-vertically (- (/ (window-total-height) 5)))
@@ -394,8 +407,7 @@ This function sets custom colors for headlines as well as other Org elements lik
     (select-window current-window)))
 
 (defun de/evil-yank-to-clipboard (beg end &optional type register yank-handler)
-  "After an Evil yank, also copy the yanked text to the system clipboard.
-This works only in a graphical session (i.e. when `display-graphic-p' is true)."
+  "After an Evil yank, also copy the yanked text to the system clipboard."
   (when (and (display-graphic-p) (fboundp 'gui-set-selection))
     (let ((text (buffer-substring-no-properties beg end)))
       (gui-set-selection 'CLIPBOARD text)
@@ -463,6 +475,7 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
     "l p" '(org-latex-preview :which-key "latex preview")
     "l e" '(org-latex-export-to-pdf :which-key "latex export")
     "l o" '(de/org-export-to-pdf-and-open :which-key "latex open")
+    "l c" '(de/clear-latex-preview-cache :which-key "clear latex cache")
 
     ;; agenda
     "a" '(org-agenda :which-key "agenda")
@@ -508,9 +521,22 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
               ring-bell-function 'ignore
               select-enable-clipboard t)
 
+;; Store backup files in a central location
+(setq backup-directory-alist
+      `(("." . ,(concat user-emacs-directory "backups")))
+      backup-by-copying t    ; Don't delink hardlinks
+      version-control t      ; Use version numbers on backups
+      delete-old-versions t  ; Automatically delete excess backups
+      kept-new-versions 6    ; Number of newest versions to keep
+      kept-old-versions 2)   ; Number of oldest versions to keep
+
+;; Create backup directory if it doesn't exist
+(make-directory (concat user-emacs-directory "backups") t)
+
 ;; --- image-dired --- 
 ; requires `imagemagick`
 
+(setq image-use-external-converter t)
 (evil-set-initial-state 'image-dired-thumbnail-mode 'emacs)
 (general-define-key
    :states '(normal motion visual)
@@ -525,16 +551,17 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
    :keymaps 'image-mode-map
    "q" '(lambda () (interactive) (kill-this-buffer) (delete-other-windows)))
 
+;; --- macOS Specific ----------------------------------------------------------
 
-
-;; --- OSX Specific -----------------------------------------------------------
-;(when (eq system-type 'darwin)
-;  (select-frame-set-input-focus (selected-frame))
-;  (setq mac-option-modifier nil
-;        ns-function-modifier 'super
-;        mac-right-command-modifier 'hyper
-;        mac-right-option-modifier 'alt
-;        mac-command-modifier 'meta))
+(defun de/macos-modifier-keys ()
+  (interactive)
+  (when (eq system-type 'darwin)
+    (select-frame-set-input-focus (selected-frame))
+    (setq mac-option-modifier nil
+          ns-function-modifier 'super
+          mac-right-command-modifier 'hyper
+          mac-right-option-modifier 'alt
+          mac-command-modifier 'meta)))
 
 ;; --- Header & mode lines ----------------------------------------------------
 (setq-default mode-line-format "")
@@ -558,6 +585,7 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
        (propertize coords 'face 'de-faded)))))
 
 ;; --- Minibuffer setup -------------------------------------------------------
+
 (setq completion-styles '(substring basic))
 (defun de-minibuffer--setup ()
   (set-window-margins nil 3 0)
@@ -570,26 +598,49 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
 
 ;; --- Package development ---
 
-(condition-case err
-    (progn
-      (add-to-list 'load-path (expand-file-name "lisp/lace" user-emacs-directory))
-      (require 'lace)
-      (lace-verify-load)
-      (message "LACE loaded successfully"))
-  (error
-   (message "Failed to load LACE: %S" err)
-   (with-current-buffer (get-buffer-create "*LACE Load Error*")
-     (erase-buffer)
-     (insert "LACE Loading Error\n")
-     (insert "================\n\n")
-     (insert (format "Error: %S\n\n" err))
-     (insert "Load Path:\n")
-     (insert (format "  %S\n\n" load-path))
-     (insert "Backtrace:\n")
-     (insert (with-output-to-string (backtrace)))
-     (display-buffer (current-buffer)))))
+;; lace
+
+;; (condition-case err
+;;     (progn
+;;       (add-to-list 'load-path
+;;                    (expand-file-name "lisp/lace" user-emacs-directory))
+;;       (require 'lace)
+;;       (lace-verify-load))
+;;   (error
+;;    (message "Failed to load LACE: %S" err)
+;;    (with-current-buffer (get-buffer-create "*LACE Load Error*")
+;;      (erase-buffer)
+;;      (insert "LACE Loading Error\n")
+;;      (insert "================\n\n")
+;;      (insert (format "Error: %S\n\n" err))
+;;      (insert "Load Path:\n")
+;;      (insert (format "  %S\n\n" load-path))
+;;      (insert "Backtrace:\n")
+;;      (insert (with-output-to-string (backtrace)))
+;;      (display-buffer (current-buffer)))))
+
+;; ;; atp
+
+;; (condition-case err
+;;     (progn
+;;       (add-to-list 'load-path
+;;                    (expand-file-name "lisp/atp" user-emacs-directory))
+;;       (require 'eatp))
+;;   (error
+;;    (message "Failed to load EATP: %S" err)
+;;    (with-current-buffer (get-buffer-create "*EATP Load Error*")
+;;      (erase-buffer)
+;;      (insert "ATP Loading Error\n")
+;;      (insert "================\n\n")
+;;      (insert (format "Error: %S\n\n" err))
+;;      (insert "Load Path:\n")
+;;      (insert (format "  %S\n\n" load-path))
+;;      (insert "Backtrace:\n")
+;;      (insert (with-output-to-string (backtrace)))
+;;      (display-buffer (current-buffer)))))
 
 ;; --- Speed benchmarking -----------------------------------------------------
+
 (let ((init-time (float-time (time-subtract (current-time) init-start-time)))
       (total-time (string-to-number (emacs-init-time "%f"))))
   (message (concat
@@ -597,5 +648,4 @@ This works only in a graphical session (i.e. when `display-graphic-p' is true)."
     (format "%.2fs " init-time)
     (propertize (format "(+ %.2fs system time)"
                         (- total-time init-time)) 'face 'shadow))))
-
 

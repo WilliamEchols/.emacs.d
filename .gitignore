@@ -6,6 +6,7 @@
 
 # Backup files
 *~
+backups/
 
 # Undo-tree save-files
 *.~undo-tree
@@ -14,7 +15,14 @@
 auto-save-list/
 elpa/
 image-dired/
+games/
+url/
 org-roam.db
+org-roam.db-journal
+.org-id-locations
+bookmarks
+*#
+.#*
 
 # Local packages
 lisp/
