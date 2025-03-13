@@ -16,6 +16,7 @@ auto-save-list/
 elpa/
 image-dired/
 games/
+transient/
 url/
 org-roam.db
 org-roam.db-journal
@@ -23,6 +24,8 @@ org-roam.db-journal
 bookmarks
 *#
 .#*
+.cache
+flycheck_init.el
 
 # Local packages
 lisp/
