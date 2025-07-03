@@ -8,12 +8,12 @@
 (setq inhibit-startup-message t)
 (setq initial-scratch-message nil)
 (setq initial-major-mode 'org-mode)
-;(setq-default indent-tabs-mode nil)
 (setq pop-up-windows nil)
 (setq image-use-external-converter t)
 (tool-bar-mode 0)
 (tooltip-mode  0)
 (scroll-bar-mode 0)
+(menu-bar-mode 0)
 
 (defun custom/kill-this-buffer ()
   (interactive) (kill-buffer (current-buffer)))
@@ -33,10 +33,11 @@
 (defvar my-org-agenda-dir "~/Desktop/orgfiles/agenda" "Directory for Org agenda files.")
 (setq my-snippets-dir '("~/.emacs.d/snippets/"))
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
-(setq banner-filepath "~/Desktop/memacs/banner.txt")
+(setq banner-filepath "~/.emacs.d/banner.txt")
+(setq my-pgp-key "EC4C243CFE51BE23026AED8BB2FD48BFD99A47DB")
 
 (defun my/org-export-to-pdf-and-open ()
-  "Export current Org buffer to a PDF and open it with Zathura or Preview."
+  "Export current Org buffer to a PDF and open it with Document Viewer or Preview."
   (interactive)
   (let ((output-file (org-latex-export-to-pdf)))
     (when output-file
@@ -47,7 +48,7 @@
        
        ;; GNU/Linux
        ((eq system-type 'gnu/linux)
-        (start-process "zathura" "*Zathura*" "zathura" output-file))
+        (start-process "evince" "*Evince*" "evince" output-file))
        
        ;; Fallback
        (t
@@ -123,6 +124,11 @@
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode))
+
+(require 'org-crypt)
+(org-crypt-use-before-save-magic)
+(setq org-tags-exclude-from-inheritance (quote ("crypt")))
+(setq org-crypt-key my-pgp-key)
 
 (use-package yasnippet
   :hook (org-mode . yas-minor-mode)
@@ -216,6 +222,8 @@
    "wr" 'my/split-and-follow-horizontally
    "wb" 'my/split-and-follow-vertically
    "wo" 'other-window
+   "p" 'org-decrypt-entry
+   "r" 'rgrep
 
    ;; LaTeX
    "lo" 'my/org-export-to-pdf-and-open
@@ -232,12 +240,12 @@
 ;; UI
 
 ;; Font and frame size
-(set-face-font 'default "Roboto Mono 14")
-(setq default-frame-alist
-      (append (list '(width  . 72) '(height . 40)
-                    '(vertical-scroll-bars . nil)
-                    '(internal-border-width . 24)
-                    '(font . "Roboto Mono 14"))))
+;(set-face-font 'default "Roboto Mono 14")
+;(setq default-frame-alist
+;      (append (list '(width  . 72) '(height . 40)
+;                    '(vertical-scroll-bars . nil)
+;                    '(internal-border-width . 24)
+;                    '(font . "Roboto Mono 14"))))
 (set-frame-parameter (selected-frame)
                      'internal-border-width 24)
 
@@ -450,27 +458,27 @@ background color that is barely perceptible."
 
 ;; Dark theme
 (defun elegance-dark ()
-    (setq frame-background-mode 'dark)
-    (set-background-color "#3f3f3f")
-    (set-foreground-color "#dcdccc")
-    (set-face-attribute 'default nil
-                        :foreground (face-foreground 'default)
-                        :background (face-background 'default))
-    (set-face-attribute 'face-critical nil :foreground "#385f38"
-                                           :background "#f8f893")
-    (set-face-attribute 'face-popout nil :foreground "#f0dfaf")
-    (set-face-attribute 'face-strong nil :foreground "#dcdccc"
-                                         :weight 'regular)
-    (set-face-attribute 'face-salient nil :foreground "#dca3a3"
-                                          :weight 'light)
-    (set-face-attribute 'face-faded nil :foreground "#777767"
-                                        :weight 'light)
-    (set-face-attribute 'face-subtle nil :background "#4f4f4f")
-    (set-modeline-faces)
-    (with-eval-after-load 'cus-edit (set-button-faces)))
+  (setq frame-background-mode 'dark)
+  (set-background-color "#282c34")
+  (set-foreground-color "#dcdfe4")
+  (set-face-attribute 'default nil
+                      :foreground "#dcdfe4"
+                      :background "#282c34")
+  (set-face-attribute 'face-critical nil :foreground "#e06c75"
+                                         :background "#3e2e2e")
+  (set-face-attribute 'face-popout nil :foreground "#e5c07b") ; string literal
+  (set-face-attribute 'face-strong nil :foreground "#dcdfe4"
+                                       :weight 'regular)
+  (set-face-attribute 'face-salient nil :foreground "#c678dd" ; function name
+                                        :weight 'normal)
+  (set-face-attribute 'face-faded nil :foreground "#5c6370" ; comments
+                                      :weight 'light)
+  (set-face-attribute 'face-subtle nil :background "#3a3f4b")
+  (set-modeline-faces) ;; Ensure these are defined
+  (with-eval-after-load 'cus-edit (set-button-faces)))
 
 ;; Set theme
-(elegance-light)
+(elegance-dark)
 
 ;; Structural
 (set-face 'bold                                          'face-strong)
@@ -788,3 +796,15 @@ function is a convenience wrapper used by `describe-package-1'."
   :after evil
   :config
   (evil-collection-init))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

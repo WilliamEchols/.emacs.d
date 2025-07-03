@@ -26,6 +26,8 @@ bookmarks
 .#*
 .cache
 flycheck_init.el
+eln-cache/
+places
 
 # Local packages
 lisp/
